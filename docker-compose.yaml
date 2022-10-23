@@ -14,6 +14,34 @@ services:
     volumes:
       - rocket-api:/etc/rocket
 
+  bridge:
+    container_name: bridge
+    restart: always
+    image: us-east1-docker.pkg.dev/paranoid-cloud-studio/code1-agency/rocket-bridge:20211108.2
+    environment:
+      COOKIE_MONSTA_FILEPATH: "/etc/rocket-bridge/secrets/cookie.monsta"
+      CONFIG_FILEPATH: "/etc/rocket-bridge/Config/settings.json"
+    volumes:
+      - rocket-bridge:/etc/rocket-bridge
+    ports:
+        - 9004:8080
+    depends_on:
+      - mongodb
+      - rabbitmq
+
+  indexer:
+    container_name: indexer
+    restart: always
+    image: us-east1-docker.pkg.dev/paranoid-cloud-studio/code1-agency/rocket-indexer:20211108.1
+    environment:
+      CONFIG_FILEPATH: "/etc/rocket-indexer/Config/settings.json"
+    volumes:
+      - rocket-indexer:/etc/rocket-indexer
+    ports:
+        - 9006:8080
+    depends_on:
+      - rabbitmq
+
   mongodb:
     container_name: biscuit
     restart: always
@@ -48,6 +76,18 @@ services:
       - 9002:9200
       - 9003:9300
 
+  rabbitmq:
+    container_name: the-rabbit
+    restart: always
+    image: rabbitmq:3.8.6-management-alpine
+    ports:
+        - 9005:15672
+        - 9007:5672
+
 volumes:
   rocket-api:
+    external: true
+  rocket-bridge:
+    external: true
+  rocket-indexer:
     external: true
