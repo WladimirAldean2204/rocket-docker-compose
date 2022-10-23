@@ -1,1 +1,53 @@
 version: '3.7'
+services:
+
+  api:
+    container_name: api
+    restart: always
+    image: us-east1-docker.pkg.dev/paranoid-cloud-studio/code1-agency/rocket-api:20221014.1
+    environment:
+      - ACCESS_TOKEN_TTL_IN_MINUTES=720
+      - COOKIE_MONSTA_FILEPATH=/etc/rocket/secrets/cookie.monsta
+      - CONFIG_FILEPATH=/etc/rocket/config/settings.json
+    ports:
+      - 9000:8000
+    volumes:
+      - rocket-api:/etc/rocket
+
+  mongodb:
+    container_name: biscuit
+    restart: always
+    image: mongo:4.2.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: pwd
+    healthcheck:
+      test: test $$(echo "rs.initiate().ok || rs.status().ok" | mongo -u root -p pwd --quiet) -eq 1
+      interval: 10s
+      start_period: 30s
+    command: ["--replSet", "dbrs", "--bind_ip_all"]
+    ports:
+      - 9001:27017
+
+  elasticsearch:
+    container_name: kit-kat
+    restart: always
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:7.9.1
+    environment:
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - 9002:9200
+      - 9003:9300
+
+volumes:
+  rocket-api:
+    external: true
